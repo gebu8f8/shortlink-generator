@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>網域管理 - <%= siteName %></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { border: none; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+    <%- include('partials/header') %>
+
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">新增網域</h5>
+            </div>
+            <div class="card-body">
+                <form action="/admin/domains/add" method="POST">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" name="domain_name" placeholder="例如：example.com" required>
+                        <button class="btn btn-primary" type="submit">新增網域</button>
+                    </div>
+                    <div class="form-text">請輸入完整的網域，不要包含 `http://` 或 `https://`。</div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">網域列表</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>網域名</th>
+                                <th>建立時間</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% domains.forEach(domain => { %>
+                                <tr>
+                                    <td><%= domain.id %></td>
+                                    <td><%= domain.domain_name %></td>
+                                    <td class="local-time" data-utc-date="<%= new Date(domain.created_at).toISOString() %>">
+                                        <%= new Date(domain.created_at).toLocaleString('zh-TW') %>
+                                    </td>
+                                    <td>
+                                        <form action="/admin/domains/delete" method="POST" class="d-inline" onsubmit="return confirm('確定要刪除這個網域嗎？');">
+                                            <input type="hidden" name="id" value="<%= domain.id %>">
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-trash"></i> 刪除
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('.local-time').forEach(el => {
+            const utcDateStr = el.getAttribute('data-utc-date');
+            if (utcDateStr) {
+                el.textContent = new Date(utcDateStr).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(/\//g, '-');
+            }
+        });
+    </script>
+</body>
+</html>

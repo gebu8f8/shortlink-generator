@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理後台 - <%= siteName %>
+    </title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .btn-add {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            z-index: 100;
+        }
+
+        .url-actions .btn {
+            margin-right: 5px;
+        }
+
+        .expired {
+            opacity: 0.6;
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('partials/header') %>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">短網址列表</h5>
+                    <div>
+                        <span class="badge bg-info">
+                            配額: <%= urlCount %> / <%= quota===0 ? '無限' : quota %>
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <% if (!urls || urls.length===0) { %>
+                        <div class="alert alert-info">目前沒有短網址，請點擊右下角的 + 按鈕新增。</div>
+                        <% } else { %>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+
+                                            <th>短網址</th>
+                                            <th>原始連結</th>
+                                            <th>點擊次數</th>
+                                            <th>建立時間</th>
+                                            <th>有效期限</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% urls.forEach(url=> {
+                                            const is_expired = url.expiry_date && new Date(url.expiry_date) < new
+                                                Date(); const domain_name=url.domain_name || defaultDomain; const
+                                                full_short_url=`https://${domain_name}/${url.short_code}`; %>
+                                                <tr class="<%= is_expired ? 'expired' : '' %>">
+
+                                                    <td>
+                                                        <a href="<%= full_short_url %>" target="_blank">
+                                                            <%= domain_name %>/<%= url.short_code %>
+                                                        </a>
+                                                        <% if (url.passcode) { %><span
+                                                                class="badge bg-warning text-dark">需密碼</span>
+                                                            <% } %>
+                                                                <% if (is_expired) { %><span
+                                                                        class="badge bg-danger">已過期</span>
+                                                                    <% } %>
+                                                    </td>
+                                                    <td>
+                                                        <a href="<%= url.original_url %>" target="_blank"
+                                                            class="text-truncate d-inline-block"
+                                                            style="max-width: 250px;" title="<%= url.original_url %>">
+                                                            <%= url.original_url %>
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <%= url.clicks %>
+                                                    </td>
+                                                    <td class="local-time"
+                                                        data-utc-date="<%= new Date(url.created_at).toISOString() %>">
+                                                    </td>
+                                                    <td class="local-time"
+                                                        data-utc-date="<%= url.expiry_date ? new Date(url.expiry_date).toISOString() : '' %>">
+                                                        <%= url.expiry_date ? '' : '永不過期' %>
+                                                    </td>
+                                                    <td class="url-actions">
+                                                        <button class="btn btn-sm btn-primary edit-url"
+                                                            data-bs-toggle="modal" data-bs-target="#editUrlModal"
+                                                            data-id="<%= url.id %>"
+                                                            data-original="<%- h(url.original_url) %>"
+                                                            data-short="<%- h(url.short_code) %>"
+                                                            data-passcode="<%- h(url.passcode || '') %>"
+                                                            data-expiry="<%= url.expiry_date || '' %>"
+                                                            data-domain-id="<%= url.domain_id || 0 %>"
+                                                            data-auto-delete="<%= url.auto_delete %>">
+                                                            <i class="fas fa-edit"></i> 編輯
+                                                        </button>
+                                                        <button class="btn btn-sm btn-success generate-qr"
+                                                            data-full-url="<%= full_short_url %>">
+                                                            <i class="fas fa-qrcode"></i> QR Code
+                                                        </button>
+                                                        <button class="btn btn-sm btn-danger delete-url"
+                                                            data-bs-toggle="modal" data-bs-target="#deleteUrlModal"
+                                                            data-id="<%= url.id %>">
+                                                            <i class="fas fa-trash"></i> 刪除
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <% } %>
+                </div>
+            </div>
+        </div>
+
+        <a href="#" class="btn btn-add btn-primary shadow" data-bs-toggle="modal" data-bs-target="#addUrlModal">
+            <i class="fas fa-plus"></i>
+        </a>
+
+        <!-- Modals -->
+        <div class="modal fade" id="addUrlModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="addUrlForm" method="post" action="/admin/urls/add">
+                        <div class="modal-header">
+                            <h5 class="modal-title">新增短網址</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="original_url" class="form-label">原始連結</label>
+                                <input type="url" class="form-control" id="original_url" name="original_url" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="domain_id" class="form-label">選擇網域</label>
+                                <select class="form-select" id="domain_id" name="domain_id">
+                                    <% domains.forEach(domain=> { %>
+                                        <option value="<%= domain.id %>">
+                                            <%= domain.domain_name %>
+                                        </option>
+                                        <% }) %>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="short_code" class="form-label">自訂短網址 (可選)</label>
+                                <input type="text" class="form-control" id="short_code" name="short_code"
+                                    placeholder="留空將自動生成">
+                            </div>
+                            <div class="mb-3">
+                                <label for="passcode" class="form-label">密碼 (可選)</label>
+                                <input type="text" class="form-control" id="passcode" name="passcode"
+                                    placeholder="留空表示不需要密碼">
+                            </div>
+                            <div class="mb-3">
+                                <label for="expiry_date" class="form-label">有效期限 (可選)</label>
+                                <input type="text" class="form-control datepicker" name="expiry_date"
+                                    placeholder="留空表示永不過期">
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" value="1" id="auto_delete"
+                                    name="auto_delete">
+                                <label class="form-check-label" for="auto_delete">過期後自動刪除</label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">新增</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editUrlModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="editUrlForm" method="post" action="/admin/urls/edit">
+                        <div class="modal-header">
+                            <h5 class="modal-title">編輯短網址</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" name="id" id="edit_id">
+                            <div class="mb-3">
+                                <label for="edit_original_url" class="form-label">原始連結</label>
+                                <input type="url" class="form-control" id="edit_original_url" name="original_url"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_domain_id" class="form-label">選擇網域</label>
+                                <select class="form-select" id="edit_domain_id" name="domain_id">
+                                    <% domains.forEach(domain=> { %>
+                                        <option value="<%= domain.id %>">
+                                            <%= domain.domain_name %>
+                                        </option>
+                                        <% }) %>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_short_code" class="form-label">短網址</label>
+                                <input type="text" class="form-control" id="edit_short_code" name="short_code" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_passcode" class="form-label">密碼 (可選)</label>
+                                <input type="text" class="form-control" id="edit_passcode" name="passcode"
+                                    placeholder="留空或清除以移除密碼">
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_expiry_date" class="form-label">有效期限 (可選)</label>
+                                <input type="text" class="form-control datepicker" id="edit_expiry_date"
+                                    name="expiry_date" placeholder="留空表示永不過期">
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" value="1" id="edit_auto_delete"
+                                    name="auto_delete">
+                                <label class="form-check-label" for="edit_auto_delete">過期後自動刪除</label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">更新</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="deleteUrlModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="deleteUrlForm" method="post" action="/admin/urls/delete">
+                        <div class="modal-header">
+                            <h5 class="modal-title">確認刪除</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>確定要刪除這個短網址嗎？此操作無法復原。</p>
+                            <input type="hidden" name="id" id="delete_id">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-danger">確認刪除</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="qrCodeModal" tabindex="-1">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">QR Code</h5><button type="button" class="btn-close"
+                            data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div id="qrcode"></div>
+                        <a id="qrDownloadLink" href="#" class="btn btn-sm btn-primary mt-3" download="qrcode.png"><i
+                                class="fas fa-download"></i> 下載</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh-tw.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Date/Time formatting
+                document.querySelectorAll('.local-time').forEach(el => {
+                    const utcDateStr = el.getAttribute('data-utc-date');
+                    if (utcDateStr) {
+                        el.textContent = new Date(utcDateStr).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(/\//g, '-');
+                    }
+                });
+
+                // Init flatpickr
+                flatpickr(".datepicker", { enableTime: true, dateFormat: "Y-m-d H:i", time_24hr: true, locale: "zh-tw" });
+
+                // Edit Modal
+                document.getElementById('editUrlModal').addEventListener('show.bs.modal', event => {
+                    const button = event.relatedTarget;
+                    document.getElementById('edit_id').value = button.dataset.id;
+                    document.getElementById('edit_original_url').value = button.dataset.original;
+                    document.getElementById('edit_short_code').value = button.dataset.short;
+                    document.getElementById('edit_passcode').value = button.dataset.passcode;
+                    document.getElementById('edit_domain_id').value = button.dataset.domainId;
+                    document.getElementById('edit_auto_delete').checked = button.dataset.autoDelete === '1';
+                    flatpickr('#edit_expiry_date').setDate(button.dataset.expiry || null);
+                });
+
+                // Delete Modal
+                document.getElementById('deleteUrlModal').addEventListener('show.bs.modal', event => {
+                    document.getElementById('delete_id').value = event.relatedTarget.dataset.id;
+                });
+
+                // QR Code Modal
+                const qrCodeModal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+                const qrcodeContainer = document.getElementById('qrcode');
+                const qrDownloadLink = document.getElementById('qrDownloadLink');
+                document.querySelectorAll('.generate-qr').forEach(button => {
+                    button.addEventListener('click', function () {
+                        const fullUrl = this.dataset.fullUrl;
+                        qrcodeContainer.innerHTML = '';
+                        new QRCode(qrcodeContainer, { text: fullUrl, width: 200, height: 200 });
+                        setTimeout(() => {
+                            const img = qrcodeContainer.querySelector('img');
+                            if (img) {
+                                qrDownloadLink.href = img.src;
+                                qrDownloadLink.download = `qrcode-${fullUrl.split('/').pop()}.png`;
+                            }
+                        }, 200);
+                        qrCodeModal.show();
+                    });
+                });
+            });
+        </script>
+</body>
+
+</html>

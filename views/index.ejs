@@ -1,0 +1,17 @@
+<%- include('partials/header', { title: '首頁' }) %>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body text-center">
+                    <h1 class="mb-4"><%= siteName %></h1>
+                    <p class="lead">這是一個短網址管理系統，請在網址後加上短網址代碼來訪問目標網站。</p>
+                    <p>使用者請訪問 <a href="/login">登入</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

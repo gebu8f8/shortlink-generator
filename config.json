@@ -1,0 +1,9 @@
+{
+    "siteName": "短網址管理系統",
+    "baseUrl": "http://localhost:3000",
+    "captcha": {
+        "enabled": false,
+        "type": "alphanumeric",
+        "length": 8
+    }
+}

@@ -1,0 +1,89 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" href="/admin/dashboard"><%= siteName %> - 管理後台</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/dashboard"><i class="fas fa-home"></i> 主控台</a>
+                </li>
+                <% if (session.user && session.user.role === 'superadmin') { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/users"><i class="fas fa-users"></i> 使用者管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/domains"><i class="fas fa-globe"></i> 網域管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/settings"><i class="fas fa-cog"></i> 系統設定</a>
+                    </li>
+                <% } %>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle"></i> <%= session.user.username %>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editProfileModal"><i class="fas fa-user-edit"></i> 修改個人資料</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt"></i> 登出</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/admin/profile/update" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">修改個人資料</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="profile_username" class="form-label">使用者名稱</label>
+                        <input type="text" class="form-control" id="profile_username" name="username" value="<%= session.user.username %>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="profile_new_password" class="form-label">新密碼</label>
+                        <input type="password" class="form-control" id="profile_new_password" name="newPassword">
+                        <div class="form-text">留空表示不變更密碼。</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="profile_confirm_password" class="form-label">確認新密碼</label>
+                        <input type="password" class="form-control" id="profile_confirm_password" name="confirmPassword">
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <label for="profile_current_password" class="form-label">請輸入目前密碼以確認變更</label>
+                        <input type="password" class="form-control" id="profile_current_password" name="currentPassword" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">儲存並登出</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+<% if (error && error.length > 0) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
+<% if (success && success.length > 0) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
+</div>

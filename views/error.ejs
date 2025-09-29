@@ -1,0 +1,22 @@
+<%- include('partials/header', { title: '錯誤' }) %>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body text-center">
+                    <h1 class="text-danger mb-4"><%= message %></h1>
+                    <% if (error && error.status) { %>
+                        <p class="lead">錯誤代碼: <%= error.status %></p>
+                    <% } %>
+                    <% if (error && error.stack) { %>
+                        <pre class="text-start p-3 bg-light border rounded"><%= error.stack %></pre>
+                    <% } %>
+                    <a href="/" class="btn btn-primary mt-3">返回首頁</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

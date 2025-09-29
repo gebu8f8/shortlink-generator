@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= hasAdmin ? '使用者登入' : '創建管理員帳號' %> - <%= siteName %></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .login-card { max-width: 400px; width: 100%; }
+        #captcha-image-container svg { display: block; }
+    </style>
+</head>
+<body>
+    <div class="card login-card shadow">
+        <div class="card-header text-center">
+            <h3 class="m-0"><%= hasAdmin ? '使用者登入' : '創建管理員帳號' %></h3>
+        </div>
+        <div class="card-body p-4">
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-danger"><%= error %></div>
+            <% } %>
+            
+            <form method="post" action="/login">
+                <div class="mb-3">
+                    <label for="username" class="form-label">帳號</label>
+                    <input type="text" class="form-control" id="username" name="username" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">密碼</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <% if (captchaEnabled) { %>
+                <div class="mb-3">
+                    <label for="captcha" class="form-label">驗證碼</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="captcha" name="captcha" required>
+                        <div class="input-group-text" id="captcha-image-container" style="padding: 0; cursor: pointer;" title="點擊刷新">
+                            <%- captchaImage %>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+                <button type="submit" class="btn btn-primary w-100">
+                    <%= hasAdmin ? '登入' : '創建帳號並登入' %>
+                </button>
+            </form>
+            <div class="mt-3 text-center">
+                <a href="/" class="text-decoration-none">返回首頁</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        const container = document.getElementById('captcha-image-container');
+        if (container) {
+            container.addEventListener('click', () => {
+                fetch('/captcha')
+                    .then(res => res.text())
+                    .then(svg => {
+                        container.innerHTML = svg;
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
